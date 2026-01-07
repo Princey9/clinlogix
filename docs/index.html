@@ -52,6 +52,12 @@ clinlogix demo-healthit.log --json</code></pre>
     <pre><code>cargo build --release
 ./target/release/clinlogix --help</code></pre>
     <p><strong>Option B:</strong> Download the pre-built binary from GitHub Releases (button above).</p>
+    <p class="muted">
+macOS note: unsigned command-line tools may be flagged by Gatekeeper.
+After downloading, run:
+<code>chmod +x clinlogix-macos</code> and
+<code>xattr -d com.apple.quarantine clinlogix-macos</code>.
+</p>
   </div>
 
   <div class="card">
