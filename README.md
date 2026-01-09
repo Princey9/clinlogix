@@ -55,25 +55,25 @@ Run log scanning:
 
 Architecture Overview
 
-mermaid
-flowchart TB
-    User[User (Terminal / Script / CI)]
-    CLI[ClinLogix CLI (Rust Application)]
-    Scan[Log Scanner]
-    Validate[FHIR Validator Client]
-    LogFile[(Log File)]
-    FHIRJson[(FHIR JSON Resource)]
-    Server[(FHIR Validation Service)]
-    Output[CLI Output (Summary / PASS / FAIL)]
+```mermaid
+flowchart LR
+    U[User]
+    C[ClinLogix CLI]
+    S[Log Scan Engine]
+    V[FHIR Validation Client]
+    L[(Log File)]
+    J[(FHIR JSON)]
+    F[(FHIR Validation Server)]
+    O[CLI Output]
 
-    User --> CLI
-    CLI --> Scan
-    CLI --> Validate
-    Scan --> LogFile
-    Scan --> Output
-    Validate --> FHIRJson
-    Validate --> Server
-    Server --> Output
+    U --> C
+    C --> S
+    C --> V
+    S --> L
+    S --> O
+    V --> J
+    V --> F
+    F --> O
 
 Deployment Summary
 
@@ -107,7 +107,7 @@ License
 
 MIT License
 
-Copyright (c) 2026 Williams Anne
+Copyright (c) 2026 Duru Princess Ifeayinwa
 
 Permission is hereby granted to use, copy, modify, and distribute this software for academic and non-commercial purposes.
 
@@ -115,5 +115,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 Author
 
-Williams Anne  
-Health Informatics / Digital Health
+Duru Princess Ifeayinwa  
+Health Informatics 
