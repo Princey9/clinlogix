@@ -55,44 +55,7 @@ Run log scanning:
 
 Architecture Overview
 
-+---------------------------+
-|           User            |
-|   (Terminal / Script)     |
-+-------------+-------------+
-              |
-              v
-+---------------------------+
-|       ClinLogix CLI       |
-|     (Rust Application)    |
-+-------------+-------------+
-              |
-     -------------------------
-     |                       |
-     v                       v
-+------------+      +---------------------+
-| Log Scanner|      | FHIR Validator      |
-|  Component |      | Client              |
-+-----+------+      +----------+----------+
-      |                          |
-      v                          v
-+------------+        +--------------------+
-| Log Files  |        | FHIR Validation    |
-| (.log)     |        | Server (external)  |
-+------------+        +----------+---------+
-                                 |
-                                 v
-                     +----------------------+
-                     | Validation Response  |
-                     | (OperationOutcome)  |
-                     +----------+-----------+
-                                |
-                                v
-+------------------------------------------------+
-|                CLI Output                      |
-|  - Error / Warning summary                     |
-|  - JSON output                                 |
-|  - PASS / FAIL validation result               |
-+------------------------------------------------+
+[View Architecture Diagram](docs/clinlogix_architecture.png)
 
 Deployment Summary
 
