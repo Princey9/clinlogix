@@ -55,25 +55,44 @@ Run log scanning:
 
 Architecture Overview
 
-```mermaid
-flowchart LR
-    U[User]
-    C[ClinLogix CLI]
-    S[Log Scan Engine]
-    V[FHIR Validation Client]
-    L[(Log File)]
-    J[(FHIR JSON)]
-    F[(FHIR Validation Server)]
-    O[CLI Output]
-
-    U --> C
-    C --> S
-    C --> V
-    S --> L
-    S --> O
-    V --> J
-    V --> F
-    F --> O
++---------------------------+
+|           User            |
+|   (Terminal / Script)     |
++-------------+-------------+
+              |
+              v
++---------------------------+
+|       ClinLogix CLI       |
+|     (Rust Application)    |
++-------------+-------------+
+              |
+     -------------------------
+     |                       |
+     v                       v
++------------+      +---------------------+
+| Log Scanner|      | FHIR Validator      |
+|  Component |      | Client              |
++-----+------+      +----------+----------+
+      |                          |
+      v                          v
++------------+        +--------------------+
+| Log Files  |        | FHIR Validation    |
+| (.log)     |        | Server (external)  |
++------------+        +----------+---------+
+                                 |
+                                 v
+                     +----------------------+
+                     | Validation Response  |
+                     | (OperationOutcome)  |
+                     +----------+-----------+
+                                |
+                                v
++------------------------------------------------+
+|                CLI Output                      |
+|  - Error / Warning summary                     |
+|  - JSON output                                 |
+|  - PASS / FAIL validation result               |
++------------------------------------------------+
 
 Deployment Summary
 
