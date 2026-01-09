@@ -1,179 +1,119 @@
 # ClinLogix
 
-ClinLogix is a Rust-based command-line tool designed for **health informatics and digital health workflows**.  
-It provides two main capabilities: **scanning health IT log files** and **validating real FHIR JSON resources** using a FHIR validation service.  
-The project also includes **Docker support** for reproducible execution and a **GitHub Pages website** for presentation.
+ClinLogix is a Rust-based command-line tool for health informatics and digital health workflows. It provides a single unified CLI that supports both health IT log analysis and validation of real FHIR JSON resources using an external FHIR validation service. The project includes Docker-based deployment and a GitHub Pages website for presentation and distribution.
 
 Motivation
 
-Healthcare IT systems generate large volumes of **logs** and **structured clinical data**.  
-Manually inspecting these files is **time-consuming**, **error-prone**, and difficult to automate.
-
-ClinLogix was built to:
-- **Speed up troubleshooting** of clinical system logs  
-- **Validate FHIR resources** before ingestion or exchange  
-- **Demonstrate a practical CLI tool** aligned with digital health workflows  
+Healthcare IT systems generate large volumes of logs and structured clinical data. Manually inspecting these files is time-consuming, error-prone, and difficult to automate. ClinLogix was developed to support faster troubleshooting of clinical systems and to validate FHIR data before exchange or ingestion, reflecting real-world health informatics practice.
 
 Features
 
-- **Log scanning** with summarized error and warning counts  
-- **Error-only output** for rapid triage  
-- **JSON output mode** for automation and scripting  
-- **FHIR JSON validation** using a `$validate` service  
-- **Clear PASS / FAIL results** with detailed issues  
-- **Docker support** (no Rust installation required)  
+- Log scanning with summarized error and warning counts  
+- Error-only output for rapid troubleshooting  
+- JSON output mode for automation and scripting  
+- FHIR JSON validation using a FHIR $validate service  
+- Clear PASS / FAIL results with detailed validation issues  
+- Docker-based deployment for reproducible execution  
 
 Command-Line Usage
 
-**Scan log files:**
+Scan health IT log files:
 
     cargo run -- scan demo-healthit.log
     cargo run -- scan demo-healthit.log --errors-only
     cargo run -- scan demo-healthit.log --json
 
-**Example output:**
+Validate FHIR JSON resources:
 
-    ClinLogix Report
-    ----------------
-    File: demo-healthit.log
-    Total lines: 6
-    Errors: 2
-    Warnings: 1
+    cargo run -- validate examples/patient.json
+    cargo run -- validate examples/patient-bad.json
 
 FHIR Validation
 
-**Validate a correct FHIR resource:**
+ClinLogix validates FHIR JSON resources by calling a remote FHIR $validate endpoint. Validation responses are parsed from OperationOutcome resources and presented clearly in the terminal.
 
-    cargo run -- validate examples/patient.json
-
-**Validate an intentionally incorrect resource:**
-
-    cargo run -- validate examples/patient-bad.json
-
-The validation output includes:
-- **HTTP status**
-- **PASS / FAIL result**
-- **Errors and warnings** returned by the validation service
-
-FHIR Validation Details
-
-ClinLogix validates FHIR JSON resources by calling a **public FHIR validation service** using the `$validate` operation.  
-Validation responses are parsed from **OperationOutcome** resources.
-
-**Default validation endpoint:**
+Default validation service:
 
     https://server.fire.ly
 
-**Override the base URL if needed:**
+Docker Deployment and Execution
 
-    cargo run -- validate examples/patient.json --base-url https://example.fhir.server
+ClinLogix can be built and executed entirely using Docker, without requiring Rust to be installed on the host system. This enables reproducible execution across different environments.
 
-Run with Docker
-
-ClinLogix can be built and executed using **Docker**, allowing reproducible runs without installing Rust.
-
-**Build the Docker image:**
+Build the Docker image:
 
     docker build -t clinlogix:latest .
 
-**Validate FHIR resources:**
+Run FHIR validation:
 
     docker run --rm -v "$PWD:/data" clinlogix:latest validate /data/examples/patient.json
     docker run --rm -v "$PWD:/data" clinlogix:latest validate /data/examples/patient-bad.json
 
-**Scan log files:**
+Run log scanning:
 
     docker run --rm -v "$PWD:/data" clinlogix:latest scan /data/demo-healthit.log --json
 
-Architecture Diagram
+Architecture Overview
 
-**ClinLogix – High-Level Architecture**
+mermaid
+flowchart TB
+    User[User (Terminal / Script / CI)]
+    CLI[ClinLogix CLI (Rust Application)]
+    Scan[Log Scanner]
+    Validate[FHIR Validator Client]
+    LogFile[(Log File)]
+    FHIRJson[(FHIR JSON Resource)]
+    Server[(FHIR Validation Service)]
+    Output[CLI Output (Summary / PASS / FAIL)]
 
-    User (Terminal / Script / CI)
-                |
-                | CLI Command (scan | validate)
-                v
-        +----------------------+
-        |    ClinLogix CLI     |
-        |  (Rust Application) |
-        +----------+-----------+
-                   |
-        +----------+-----------+
-        |                      |
-        v                      v
-+--------------------+   +---------------------------+
-| Log File Processor |   | FHIR Validation Client    |
-| (scan errors)      |   | ($validate request)       |
-+----------+---------+   +------------+--------------+
-           |                          |
-           |                          | HTTP request
-           v                          v
-+--------------------+   +---------------------------+
-| Summary Formatter  |   | External FHIR Server      |
-| (text / JSON)      |   | (e.g. server.fire.ly)    |
-+----------+---------+   +------------+--------------+
-           |                          |
-           +------------+-------------+
-                        |
-                        v
-            +-------------------------------+
-            |        CLI Output             |
-            | - Error / warning counts      |
-            | - JSON summaries              |
-            | - PASS / FAIL validation      |
-            | - Validation issues           |
-            +-------------------------------+
+    User --> CLI
+    CLI --> Scan
+    CLI --> Validate
+    Scan --> LogFile
+    Scan --> Output
+    Validate --> FHIRJson
+    Validate --> Server
+    Server --> Output
 
-Deployment Note
+Deployment Summary
 
-ClinLogix can be executed:
-- **Natively via Rust** (cargo run or release binary)
-- **Inside Docker** for environment-independent execution
+ClinLogix is deployed as a native Rust CLI application, as a Docker container for environment-independent execution, and as a static project website hosted on GitHub Pages.
 
 Project Structure
 
     clinlogix/
     ├── src/
-    │   └── main.rs              CLI implementation (scan + validate)
+    │   └── main.rs
     ├── examples/
-    │   ├── patient.json         Valid FHIR Patient example
-    │   └── patient-bad.json     Invalid FHIR Patient example
+    │   ├── patient.json
+    │   └── patient-bad.json
     ├── docs/
-    │   ├── index.html           GitHub Pages website
+    │   ├── index.html
     │   └── Clinlogix_lean_canvas_doc.pdf
-    ├── Dockerfile               Docker build definition
+    ├── Dockerfile
     ├── .dockerignore
     ├── Cargo.toml
     └── README.md
 
 Project Website
 
-**https://princey9.github.io/clinlogix/**
+https://princey9.github.io/clinlogix/
 
 Notes
 
-- **Synthetic data only** is used  
-- **No real patient data** is included  
-- Public FHIR validation services may occasionally return server-side errors  
-
-Future Improvements
-
-- **Support for additional FHIR resource types**
-- **Local validation service** via Docker Compose
-- **Structured JSON output** for validation results
-- **CI integration** for automated checks
+Only synthetic data is used. No real patient data is included. External FHIR validation services may occasionally be unavailable.
 
 License
 
-**MIT License**
+MIT License
 
-Copyright (c) 2026 Duru Princess Ifeayinwa
+Copyright (c) 2026 Williams Anne
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files to use, copy, modify, and distribute the software for **academic and non-commercial purposes**.
+Permission is hereby granted to use, copy, modify, and distribute this software for academic and non-commercial purposes.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 Author
 
-**Duru Princess Ifeayinwa**  
-Health Informatics
+Williams Anne  
+Health Informatics / Digital Health
