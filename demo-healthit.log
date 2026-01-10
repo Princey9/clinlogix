@@ -4,3 +4,4 @@ WARNING 2026-01-07 08:03:22 FHIR endpoint slow response
 ERROR 2026-01-07 08:05:40 Database connection failed
 INFO 2026-01-07 08:06:10 Retrying connection
 ERROR 2026-01-07 08:06:45 Timeout while writing audit log
+ERROR 2026-01-07 08:07:12 FHIR validation failed for Patient/123
