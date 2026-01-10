@@ -56,8 +56,9 @@ Run log scanning:
 Install (macOS)
 
 After building, install ClinLogix as a system-wide CLI:
-```bash
-sudo cp target/release/clinlogix /usr/local/bin/clinlogix
+
+    sudo cp target/release/clinlogix /usr/local/bin/clinlogix
+    clinlogix --help
 
 Architecture Overview
 
