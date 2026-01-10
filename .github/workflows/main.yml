@@ -11,11 +11,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-musl       # Linux (musl)
-          - aarch64-unknown-linux-musl      # ARM Linux (musl)
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
 
     env:
-      BINARY_NAME: commr
+      BINARY_NAME: clinlogix
 
     steps:
       - name: Checkout code
@@ -27,32 +27,19 @@ jobs:
       - name: Install Cross
         run: cargo install cross
 
-      - name: Install Target for Cross Compilation
-        run: rustup target add ${{ matrix.target }}
-
       - name: Build with Cross
         run: cross build --target ${{ matrix.target }} --release --verbose
 
       - name: Create Release Archive
         run: |
           mkdir -p release
-
-          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
-            cp target/${{ matrix.target }}/release/$BINARY_NAME.exe release/
-            zip -r ${{ matrix.target }}.zip release
-          elif [[ "${{ matrix.target }}" == *"darwin"* ]]; then
-            cp target/${{ matrix.target }}/release/$BINARY_NAME release/
-            tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
-          else
-            cp target/${{ matrix.target }}/release/$BINARY_NAME release/
-            tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
-          fi
+          cp target/${{ matrix.target }}/release/$BINARY_NAME release/
+          tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
             *.tar.gz
-            *.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.COMMR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
