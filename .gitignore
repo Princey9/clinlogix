@@ -11,3 +11,11 @@
 
 # OS
 .DS_Store
+
+# Local data folders (do not commit)
+incoming/
+synthea/
+
+# Rust build artifacts
+target/
+dist/
