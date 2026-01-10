@@ -15,6 +15,13 @@ Features
 - Clear PASS / FAIL results with detailed validation issues  
 - Docker-based deployment for reproducible execution  
 
+Testing Release Binaries
+
+The Linux release binaries are statically linked and intended for Linux systems.
+Attempting to run the Linux binary on macOS will result in:
+zsh: exec format error
+
+
 Command-Line Usage
 
 Scan health IT log files:
