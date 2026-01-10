@@ -53,11 +53,11 @@ Run log scanning:
 
     docker run --rm -v "$PWD:/data" clinlogix:latest scan /data/demo-healthit.log --json
 
-    ### Install (macOS)
+Install (macOS)
+
 After building, install ClinLogix as a system-wide CLI:
 ```bash
 sudo cp target/release/clinlogix /usr/local/bin/clinlogix
-
 
 Architecture Overview
 
