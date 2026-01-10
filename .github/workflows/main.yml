@@ -3,7 +3,11 @@ name: Release Statically Linked Rust Binary
 on:
   push:
     tags:
-      - 'v*'  # Trigger on tags like 'v1.0.0'
+      - "v*"
+
+# ✅ IMPORTANT: allow GitHub Actions to create Releases + upload assets
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -33,8 +37,8 @@ jobs:
       - name: Create Release Archive
         run: |
           mkdir -p release
-          cp target/${{ matrix.target }}/release/$BINARY_NAME release/
-          tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
+          cp target/${{ matrix.target }}/release/${BINARY_NAME} release/
+          tar -czvf ${{ matrix.target }}.tar.gz -C release ${BINARY_NAME}
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
