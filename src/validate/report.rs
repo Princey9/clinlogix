@@ -7,6 +7,8 @@ use crate::validate::types::{Issue, OperationOutcome};
 pub const PROFILE_RESOLUTION_THEME: &str = "Profile resolution (missing profiles on server)";
 const PROFILE_RESOLUTION_HINT: &str = "This usually means the server doesn't have the required implementation guide packages (e.g., US Core) installed.";
 
+const PROFILE_RESOLUTION_RECOMMENDATION: &str = "Consider validating against a server that supports the required IG packages (e.g., US Core), or install those packages on your validator server.";
+
 #[derive(Debug, Clone)]
 pub struct IssueSummary {
     pub severity: String,
@@ -178,6 +180,7 @@ pub fn format_report(report: &ValidationReport) -> String {
             output.push_str(&format!("  {}. {} (x{})\n", index + 1, theme, count));
             if theme == PROFILE_RESOLUTION_THEME {
                 output.push_str(&format!("  {}\n", PROFILE_RESOLUTION_HINT));
+                output.push_str(&format!("  {}\n", PROFILE_RESOLUTION_RECOMMENDATION));
             }
         }
     }
