@@ -43,6 +43,16 @@ Default validation service:
 
     https://server.fire.ly
 
+Validating Synthea Bundles
+
+Synthea bundles often rely on US Core and other implementation guide profiles. When you validate them against the default Firely server, the server may not have those packages installed, and it will return errors such as "Unable to resolve reference to profile ...". ClinLogix now highlights these issues under a dedicated theme while still grouping categories by severity, code, and message and reporting JSON path expressions with best-effort line numbers.
+
+If you run into profile resolution errors, try alternative validation endpoints (options, not requirements):
+
+- Firely server (default): `https://server.fire.ly`
+- HAPI public R4 server: `https://hapi.fhir.org/baseR4`
+- A local validator setup (for example, a HAPI instance or another validator that has US Core packages installed)
+
 Docker Deployment and Execution
 
 ClinLogix can be built and executed entirely using Docker, without requiring Rust to be installed on the host system. This enables reproducible execution across different environments.
@@ -95,6 +105,20 @@ Project Website
 
 https://princey9.github.io/clinlogix/
 
+Repository Settings (GitHub About)
+
+To update the GitHub About section manually:
+
+1. Go to the GitHub repo and find the About box in the right sidebar.
+2. Click the edit (pencil) icon.
+3. Add the GitHub Pages URL, a short description, and relevant topics (for example: fhir, rust, cli, health-it).
+
+To enable code review requirements:
+
+1. Go to Settings → Branches → Add branch protection rule.
+2. Target the default branch, then enable “Require a pull request before merging.”
+3. Set the required number of approvals and save the rule.
+
 Notes
 
 Only synthetic data is used. No real patient data is included. External FHIR validation services may occasionally be unavailable.
@@ -112,4 +136,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 Author
 
 Duru Princess Ifeayinwa  
-Health Informatics 
+Health Informatics

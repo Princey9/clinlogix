@@ -49,9 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             json,
         } => scan::run_scan(&logfile, errors_only, json)?,
 
-        Commands::Validate { fhir_file, base_url } => {
-            validate::run_validate(&fhir_file, &base_url).await?
-        }
+        Commands::Validate {
+            fhir_file,
+            base_url,
+        } => validate::run_validate(&fhir_file, &base_url).await?,
     }
 
     Ok(())
