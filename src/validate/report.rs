@@ -24,6 +24,7 @@ pub struct ValidationReport {
     pub status: StatusCode,
     pub file: String,
     pub base_url: String,
+    pub validate_url: String,
     pub total: usize,
     pub error_count: usize,
     pub warning_count: usize,
@@ -42,6 +43,7 @@ pub fn build_report(
     status: StatusCode,
     file: &str,
     base_url: &str,
+    validate_url: &str,
 ) -> ValidationReport {
     let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
     let mut theme_counts: BTreeMap<String, usize> = BTreeMap::new();
@@ -67,6 +69,7 @@ pub fn build_report(
         status,
         file: file.to_string(),
         base_url: base_url.to_string(),
+        validate_url: validate_url.to_string(),
         total: outcome.issue.len(),
         error_count,
         warning_count,
@@ -154,6 +157,7 @@ pub fn format_report(report: &ValidationReport) -> String {
     output.push_str("--------------\n");
     output.push_str(&format!("File: {}\n", report.file));
     output.push_str(&format!("Base: {}\n", report.base_url));
+    output.push_str(&format!("Validate: {}\n", report.validate_url));
     output.push_str(&format!("HTTP: {}\n", report.status));
     output.push_str(&format!(
         "Issues: {} (errors: {}, warnings: {}, info: {})\n",
@@ -190,6 +194,11 @@ pub fn format_report(report: &ValidationReport) -> String {
         return output;
     }
 
+    output.push_str("\nTop Issue Groups:\n");
+    for (key, items) in sorted_groups(&report.groups).into_iter().take(3) {
+        output.push_str(&format!("- {} (x{})\n", key, items.len()));
+    }
+
     output.push_str("\nIssue Categories (severity/code/message):\n");
     for (key, items) in sorted_groups(&report.groups) {
         let counts = summarize_severity(&items);
@@ -215,9 +224,9 @@ pub fn format_report(report: &ValidationReport) -> String {
                     "     expression: {}\n",
                     item.expression.join(", ")
                 ));
-                if let Some(line) = item.line {
-                    output.push_str(&format!("     line: {}\n", line));
-                }
+            }
+            if let Some(line) = item.line {
+                output.push_str(&format!("     line: {}\n", line));
             }
         }
     }
@@ -332,7 +341,13 @@ mod tests {
             ],
         };
 
-        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
         assert_eq!(report.groups.len(), 2);
         let first_key = report
             .groups
@@ -452,7 +467,13 @@ mod tests {
             ],
         };
 
-        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
         let grouped_total: usize = report.groups.values().map(Vec::len).sum();
         assert_eq!(report.total, grouped_total);
     }
@@ -504,7 +525,13 @@ mod tests {
         }"#;
 
         let outcome: OperationOutcome = serde_json::from_str(json).expect("outcome parse");
-        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
 
         assert_eq!(report.total, 4);
         let grouped_total: usize = report.groups.values().map(Vec::len).sum();
@@ -532,7 +559,13 @@ mod tests {
         }"#;
 
         let outcome: OperationOutcome = serde_json::from_str(json).expect("outcome parse");
-        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
         assert_eq!(
             report.theme_counts[PROFILE_RESOLUTION_THEME], 1,
             "expected profile resolution theme count"
@@ -554,7 +587,63 @@ mod tests {
             }],
         };
 
-        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
         assert_eq!(report.theme_counts[PROFILE_RESOLUTION_THEME], 1);
+    }
+
+    #[test]
+    fn report_shows_fail_result_when_errors_present() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![Issue {
+                severity: Some("error".to_string()),
+                code: Some("invalid".to_string()),
+                diagnostics: Some("Missing id".to_string()),
+                details: None,
+                location: vec![],
+                expression: vec![],
+            }],
+        };
+
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
+        let output = format_report(&report);
+        assert!(output.contains("Result: FAIL ❌"));
+    }
+
+    #[test]
+    fn prints_line_number_without_expression() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![Issue {
+                severity: Some("error".to_string()),
+                code: Some("invalid".to_string()),
+                diagnostics: Some("Missing id (line: 6)".to_string()),
+                details: None,
+                location: vec![],
+                expression: vec![],
+            }],
+        };
+
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "validate",
+        );
+        let output = format_report(&report);
+        assert!(output.contains("line: 6"));
     }
 }

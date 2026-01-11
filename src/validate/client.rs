@@ -12,6 +12,7 @@ pub struct ValidateRequest {
 pub struct ValidateResponse {
     pub status: StatusCode,
     pub body_text: String,
+    pub url: String,
 }
 
 pub fn load_request(fhir_file: &str) -> Result<ValidateRequest, Box<dyn std::error::Error>> {
@@ -36,7 +37,7 @@ pub async fn post_validate(
 
     let client = reqwest::Client::new();
     let response = client
-        .post(url)
+        .post(&url)
         .header("Accept", "application/fhir+json")
         .header("Content-Type", "application/fhir+json")
         .body(request.raw.clone())
@@ -46,5 +47,9 @@ pub async fn post_validate(
     let status = response.status();
     let body_text = response.text().await?;
 
-    Ok(ValidateResponse { status, body_text })
+    Ok(ValidateResponse {
+        status,
+        body_text,
+        url,
+    })
 }

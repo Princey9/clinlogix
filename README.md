@@ -105,6 +105,14 @@ Project Website
 
 https://princey9.github.io/clinlogix/
 
+Enable GitHub Pages and set the About link:
+
+1. GitHub repo → Settings → Pages
+2. Source: Deploy from a branch
+3. Branch: main (or default) + folder: /docs
+4. Save → copy the generated URL
+5. Repo main page → About → Website → paste the Pages URL
+
 Repository Settings (GitHub About)
 
 To update the GitHub About section manually:

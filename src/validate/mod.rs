@@ -9,7 +9,16 @@ pub async fn run_validate(
     let request = client::load_request(fhir_file)?;
     let response = client::post_validate(&request, base_url).await?;
     let outcome = report::parse_operation_outcome(&response.body_text);
-    let report = report::build_report(&outcome, response.status, fhir_file, base_url);
+    let report = report::build_report(
+        &outcome,
+        response.status,
+        fhir_file,
+        base_url,
+        &response.url,
+    );
     report::print_report(&report);
+    if report.error_count > 0 || !report.status.is_success() {
+        return Err("FHIR validation failed".into());
+    }
     Ok(())
 }
