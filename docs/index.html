@@ -85,6 +85,8 @@
   <ul>
     <li>Summarizes errors and warnings in log files</li>
     <li>Validates FHIR JSON resources and reports conformance issues</li>
+    <li>Groups validation findings by category, theme, and severity with JSON path expressions</li>
+    <li>Adds best-effort line numbers to help you locate issues in large bundles</li>
     <li>Supports JSON output and containerized execution via Docker</li>
   </ul>
 </div>
@@ -104,6 +106,25 @@ clinlogix validate examples/patient-bad.json</code></pre>
   <p class="muted">
     (Screenshots of these commands are included in the project repository.)
   </p>
+</div>
+
+<div class="card">
+  <h2>Validating Synthea Bundles</h2>
+  <p>
+    Synthea bundles often depend on US Core and other implementation guide profiles.
+    If the validation server does not have those packages installed, you will see errors
+    like “Unable to resolve reference to profile ...”. ClinLogix now groups those under
+    a profile resolution theme while preserving category grouping by severity/code/message,
+    JSON path expressions, and best-effort line numbers to help you triage results.
+  </p>
+  <p>
+    If you encounter profile resolution errors, you can try a different validator:
+  </p>
+  <ul>
+    <li>Firely server (default): <code>https://server.fire.ly</code></li>
+    <li>HAPI public R4 server: <code>https://hapi.fhir.org/baseR4</code></li>
+    <li>A local validator instance with the required packages installed</li>
+  </ul>
 </div>
 
 <div class="card">

@@ -4,6 +4,9 @@ use reqwest::StatusCode;
 
 use crate::validate::types::{Issue, OperationOutcome};
 
+pub const PROFILE_RESOLUTION_THEME: &str = "Profile resolution (missing profiles on server)";
+const PROFILE_RESOLUTION_HINT: &str = "This usually means the server doesn't have the required implementation guide packages (e.g., US Core) installed.";
+
 #[derive(Debug, Clone)]
 pub struct IssueSummary {
     pub severity: String,
@@ -11,6 +14,8 @@ pub struct IssueSummary {
     pub message: String,
     pub location: Vec<String>,
     pub expression: Vec<String>,
+    pub theme: String,
+    pub line: Option<u32>,
 }
 
 pub struct ValidationReport {
@@ -22,10 +27,12 @@ pub struct ValidationReport {
     pub warning_count: usize,
     pub info_count: usize,
     pub groups: BTreeMap<String, Vec<IssueSummary>>,
+    pub theme_counts: BTreeMap<String, usize>,
 }
 
 pub fn parse_operation_outcome(body_text: &str) -> OperationOutcome {
-    serde_json::from_str::<OperationOutcome>(body_text).unwrap_or_else(|_| OperationOutcome::empty())
+    serde_json::from_str::<OperationOutcome>(body_text)
+        .unwrap_or_else(|_| OperationOutcome::empty())
 }
 
 pub fn build_report(
@@ -35,6 +42,7 @@ pub fn build_report(
     base_url: &str,
 ) -> ValidationReport {
     let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
+    let mut theme_counts: BTreeMap<String, usize> = BTreeMap::new();
     let mut error_count = 0;
     let mut warning_count = 0;
     let mut info_count = 0;
@@ -49,7 +57,8 @@ pub fn build_report(
         }
 
         let key = group_key(&summary);
-        groups.entry(key).or_default().push(summary);
+        groups.entry(key).or_default().push(summary.clone());
+        *theme_counts.entry(summary.theme.clone()).or_insert(0) += 1;
     }
 
     ValidationReport {
@@ -61,21 +70,25 @@ pub fn build_report(
         warning_count,
         info_count,
         groups,
+        theme_counts,
     }
 }
 
 fn summarize_issue(issue: &Issue) -> IssueSummary {
-    let severity = issue
-        .severity
-        .as_deref()
-        .unwrap_or("unknown")
-        .to_string();
+    let severity = issue.severity.as_deref().unwrap_or("unknown").to_string();
     let code = issue.code.as_deref().unwrap_or("unknown").to_string();
     let message = issue
         .diagnostics
         .clone()
-        .or_else(|| issue.details.as_ref().and_then(|details| details.text.clone()))
+        .or_else(|| {
+            issue
+                .details
+                .as_ref()
+                .and_then(|details| details.text.clone())
+        })
         .unwrap_or_default();
+    let theme = classify_theme(&message);
+    let line = extract_line_number(&message);
 
     IssueSummary {
         severity,
@@ -83,56 +96,149 @@ fn summarize_issue(issue: &Issue) -> IssueSummary {
         message,
         location: issue.location.clone(),
         expression: issue.expression.clone(),
+        theme,
+        line,
     }
 }
 
-pub fn print_report(report: &ValidationReport) {
-    println!("FHIR Validation");
-    println!("--------------");
-    println!("File: {}", report.file);
-    println!("Base: {}", report.base_url);
-    println!("HTTP: {}", report.status);
-    println!(
-        "Issues: {} (errors: {}, warnings: {}, info: {})",
+fn classify_theme(message: &str) -> String {
+    if is_profile_resolution_issue(message) {
+        PROFILE_RESOLUTION_THEME.to_string()
+    } else {
+        "General".to_string()
+    }
+}
+
+fn is_profile_resolution_issue(message: &str) -> bool {
+    let message_lower = message.to_lowercase();
+    message_lower.contains("unable to resolve reference to profile")
+        || (message_lower.contains("profile") && message_lower.contains("resolve"))
+}
+
+fn extract_line_number(message: &str) -> Option<u32> {
+    let lower = message.to_lowercase();
+    let needle = "line:";
+    let start = lower.find(needle)?;
+    let mut chars = lower[start + needle.len()..].chars().peekable();
+
+    while let Some(ch) = chars.peek() {
+        if ch.is_whitespace() {
+            chars.next();
+        } else {
+            break;
+        }
+    }
+
+    let mut digits = String::new();
+    while let Some(ch) = chars.peek() {
+        if ch.is_ascii_digit() {
+            digits.push(*ch);
+            chars.next();
+        } else {
+            break;
+        }
+    }
+
+    if digits.is_empty() {
+        None
+    } else {
+        digits.parse::<u32>().ok()
+    }
+}
+
+pub fn format_report(report: &ValidationReport) -> String {
+    let mut output = String::new();
+    output.push_str("FHIR Validation\n");
+    output.push_str("--------------\n");
+    output.push_str(&format!("File: {}\n", report.file));
+    output.push_str(&format!("Base: {}\n", report.base_url));
+    output.push_str(&format!("HTTP: {}\n", report.status));
+    output.push_str(&format!(
+        "Issues: {} (errors: {}, warnings: {}, info: {})\n",
         report.total, report.error_count, report.warning_count, report.info_count
-    );
-    println!(
-        "Total: {} issues in {} categories",
+    ));
+    output.push_str(&format!(
+        "Total: {} issues in {} categories\n",
         report.total,
         report.groups.len()
-    );
+    ));
 
     if report.error_count == 0 && report.status.is_success() {
-        println!("Result: PASS ✅");
+        output.push_str("Result: PASS ✅\n");
     } else {
-        println!("Result: FAIL ❌");
+        output.push_str("Result: FAIL ❌\n");
+    }
+
+    output.push_str("Themes:\n");
+    if report.theme_counts.is_empty() {
+        output.push_str("  none\n");
+    } else {
+        for (index, (theme, count)) in sorted_theme_counts(&report.theme_counts).iter().enumerate()
+        {
+            output.push_str(&format!("  {}. {} (x{})\n", index + 1, theme, count));
+            if theme == PROFILE_RESOLUTION_THEME {
+                output.push_str(&format!("  {}\n", PROFILE_RESOLUTION_HINT));
+            }
+        }
     }
 
     if report.groups.is_empty() {
-        println!("\nNo issues reported.");
-        return;
+        output.push_str("\nNo issues reported.\n");
+        return output;
     }
 
-    println!("\nIssue Categories (severity/code/message):");
+    output.push_str("\nIssue Categories (severity/code/message):\n");
     for (key, items) in sorted_groups(&report.groups) {
         let counts = summarize_severity(&items);
         let summary = format_severity_summary(&counts);
-        println!("- {} ({}): {}", key, items.len(), summary);
+        output.push_str(&format!("- {} ({}): {}\n", key, items.len(), summary));
         for (index, item) in items.iter().enumerate() {
             let message = if item.message.is_empty() {
                 "(no diagnostics provided)"
             } else {
                 item.message.as_str()
             };
-            println!("  {}. [{}] {}", index + 1, item.severity, message);
+            output.push_str(&format!(
+                "  {}. [{}] {}\n",
+                index + 1,
+                item.severity,
+                message
+            ));
             if !item.location.is_empty() {
-                println!("     location: {}", item.location.join(", "));
+                output.push_str(&format!("     location: {}\n", item.location.join(", ")));
             }
             if !item.expression.is_empty() {
-                println!("     expression: {}", item.expression.join(", "));
+                output.push_str(&format!(
+                    "     expression: {}\n",
+                    item.expression.join(", ")
+                ));
+                if let Some(line) = item.line {
+                    output.push_str(&format!("     line: {}\n", line));
+                }
             }
         }
     }
+
+    output
+}
+
+pub fn print_report(report: &ValidationReport) {
+    println!("{}", format_report(report));
+}
+
+fn sorted_theme_counts(counts: &BTreeMap<String, usize>) -> Vec<(String, usize)> {
+    let mut entries: Vec<(String, usize)> = counts
+        .iter()
+        .map(|(theme, count)| (theme.clone(), *count))
+        .collect();
+
+    entries.sort_by(|(left_theme, left_count), (right_theme, right_count)| {
+        right_count
+            .cmp(left_count)
+            .then_with(|| left_theme.cmp(right_theme))
+    });
+
+    entries
 }
 
 fn group_key(summary: &IssueSummary) -> String {
@@ -156,9 +262,7 @@ fn summarize_severity(items: &[IssueSummary]) -> BTreeMap<String, usize> {
     counts
 }
 
-fn sorted_groups(
-    groups: &BTreeMap<String, Vec<IssueSummary>>,
-) -> Vec<(String, Vec<IssueSummary>)> {
+fn sorted_groups(groups: &BTreeMap<String, Vec<IssueSummary>>) -> Vec<(String, Vec<IssueSummary>)> {
     let mut entries: Vec<(String, Vec<IssueSummary>)> = groups
         .iter()
         .map(|(key, items)| (key.clone(), items.clone()))
@@ -188,6 +292,18 @@ fn format_severity_summary(counts: &BTreeMap<String, usize>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn issue_summary(message: &str, severity: &str, theme: &str) -> IssueSummary {
+        IssueSummary {
+            severity: severity.to_string(),
+            code: "invalid".to_string(),
+            message: message.to_string(),
+            location: vec![],
+            expression: vec![],
+            theme: theme.to_string(),
+            line: None,
+        }
+    }
 
     #[test]
     fn groups_issues_by_code() {
@@ -240,27 +356,9 @@ mod tests {
     #[test]
     fn summarizes_severity_counts_per_group() {
         let items = vec![
-            IssueSummary {
-                severity: "error".to_string(),
-                code: "invalid".to_string(),
-                message: "Missing id".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
-            IssueSummary {
-                severity: "warning".to_string(),
-                code: "invalid".to_string(),
-                message: "Unknown system".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
-            IssueSummary {
-                severity: "warning".to_string(),
-                code: "invalid".to_string(),
-                message: "Deprecated".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
+            issue_summary("Missing id", "error", "General"),
+            issue_summary("Unknown system", "warning", "General"),
+            issue_summary("Deprecated", "warning", "General"),
         ];
 
         let counts = summarize_severity(&items);
@@ -271,20 +369,8 @@ mod tests {
     #[test]
     fn groups_same_key_together() {
         let items = vec![
-            IssueSummary {
-                severity: "error".to_string(),
-                code: "invalid".to_string(),
-                message: "Missing id".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
-            IssueSummary {
-                severity: "error".to_string(),
-                code: "invalid".to_string(),
-                message: "Missing id".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
+            issue_summary("Missing id", "error", "General"),
+            issue_summary("Missing id", "error", "General"),
         ];
 
         let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
@@ -301,20 +387,8 @@ mod tests {
     #[test]
     fn separates_groups_when_message_differs() {
         let items = vec![
-            IssueSummary {
-                severity: "error".to_string(),
-                code: "invalid".to_string(),
-                message: "Missing id".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
-            IssueSummary {
-                severity: "error".to_string(),
-                code: "invalid".to_string(),
-                message: "Unknown system".to_string(),
-                location: vec![],
-                expression: vec![],
-            },
+            issue_summary("Missing id", "error", "General"),
+            issue_summary("Unknown system", "error", "General"),
         ];
 
         let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
@@ -329,20 +403,8 @@ mod tests {
     #[test]
     fn sorts_groups_by_count_descending() {
         let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
-        let high = IssueSummary {
-            severity: "error".to_string(),
-            code: "invalid".to_string(),
-            message: "Missing id".to_string(),
-            location: vec![],
-            expression: vec![],
-        };
-        let low = IssueSummary {
-            severity: "warning".to_string(),
-            code: "incomplete".to_string(),
-            message: "Missing field".to_string(),
-            location: vec![],
-            expression: vec![],
-        };
+        let high = issue_summary("Missing id", "error", "General");
+        let low = issue_summary("Missing field", "warning", "General");
         let high_key = group_key(&high);
         let low_key = group_key(&low);
         groups.insert(high_key.clone(), vec![high.clone(), high]);
@@ -400,6 +462,8 @@ mod tests {
             message: "Missing id".to_string(),
             location: vec!["Patient.id".to_string()],
             expression: vec!["Patient.id".to_string()],
+            theme: "General".to_string(),
+            line: None,
         };
 
         let key = group_key(&summary);
@@ -409,27 +473,9 @@ mod tests {
     #[test]
     fn sorted_groups_matches_print_ordering() {
         let mut groups: BTreeMap<String, Vec<IssueSummary>> = BTreeMap::new();
-        let high = IssueSummary {
-            severity: "error".to_string(),
-            code: "invalid".to_string(),
-            message: "Missing id".to_string(),
-            location: vec![],
-            expression: vec![],
-        };
-        let mid = IssueSummary {
-            severity: "warning".to_string(),
-            code: "incomplete".to_string(),
-            message: "Missing field".to_string(),
-            location: vec![],
-            expression: vec![],
-        };
-        let low = IssueSummary {
-            severity: "information".to_string(),
-            code: "informational".to_string(),
-            message: "FYI".to_string(),
-            location: vec![],
-            expression: vec![],
-        };
+        let high = issue_summary("Missing id", "error", "General");
+        let mid = issue_summary("Missing field", "warning", "General");
+        let low = issue_summary("FYI", "information", "General");
         let high_key = group_key(&high);
         let mid_key = group_key(&mid);
         let low_key = group_key(&low);
@@ -467,5 +513,45 @@ mod tests {
         assert_eq!(report.groups[error_key].len(), 2);
         assert_eq!(report.groups[warning_key].len(), 1);
         assert_eq!(report.groups[info_key].len(), 1);
+    }
+
+    #[test]
+    fn classifies_profile_resolution_theme_with_line() {
+        let json = r#"{
+            "resourceType":"OperationOutcome",
+            "issue":[
+                {
+                    "severity":"error",
+                    "code":"invalid",
+                    "diagnostics":"Unable to resolve reference to profile 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-bmi'. (line: 6)"
+                }
+            ]
+        }"#;
+
+        let outcome: OperationOutcome = serde_json::from_str(json).expect("outcome parse");
+        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        assert_eq!(
+            report.theme_counts[PROFILE_RESOLUTION_THEME], 1,
+            "expected profile resolution theme count"
+        );
+        assert_eq!(report.groups.values().next().unwrap()[0].line, Some(6));
+    }
+
+    #[test]
+    fn classifies_profile_resolution_when_phrase_missing() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![Issue {
+                severity: Some("error".to_string()),
+                code: Some("invalid".to_string()),
+                diagnostics: Some("Failed to resolve profile reference".to_string()),
+                details: None,
+                location: vec![],
+                expression: vec![],
+            }],
+        };
+
+        let report = build_report(&outcome, StatusCode::BAD_REQUEST, "test.json", "base");
+        assert_eq!(report.theme_counts[PROFILE_RESOLUTION_THEME], 1);
     }
 }
