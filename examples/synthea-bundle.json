@@ -1,0 +1,31 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "meta": {
+    "source": "https://synthea.mitre.org"
+  },
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:8b1a9b5b-9a7d-4d0d-8f3e-1b5e0ab56b6a",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "synthea-patient-1",
+        "identifier": [
+          {
+            "system": "https://synthea.mitre.org",
+            "value": "8b1a9b5b-9a7d-4d0d-8f3e-1b5e0ab56b6a"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Doe",
+            "given": ["Jane"]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1985-05-20"
+      }
+    }
+  ]
+}
