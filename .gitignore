@@ -19,3 +19,7 @@ synthea/
 # Rust build artifacts
 target/
 dist/
+
+# Reproducible check outputs
+out/*
+!out/.gitkeep
