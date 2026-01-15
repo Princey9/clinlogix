@@ -21,6 +21,17 @@ The Linux release binaries are statically linked and intended for Linux systems.
 Attempting to run the Linux binary on macOS will result in:
 zsh: exec format error
 
+Reproducible Checks
+
+Run the verification script and save logs to a timestamped folder under `out/`:
+
+    bash scripts/run_checks.sh
+
+Optional overrides:
+
+    BASE_URL=https://server.fire.ly bash scripts/run_checks.sh
+    RUN_BATCH=1 bash scripts/run_checks.sh
+
 
 Command-Line Usage
 
@@ -47,11 +58,26 @@ Validating Synthea Bundles
 
 Synthea bundles often rely on US Core and other implementation guide profiles. When you validate them against the default Firely server, the server may not have those packages installed, and it will return errors such as "Unable to resolve reference to profile ...". ClinLogix now highlights these issues under a dedicated theme while still grouping categories by severity, code, and message and reporting JSON path expressions with best-effort line numbers.
 
+Generate Synthea data (optional):
+
+- Install Synthea from https://github.com/synthetichealth/synthea
+- Run a small generation, for example: `./run_synthea -p 1`
+- Copy a FHIR bundle JSON into `synthea/` (or `examples/`) and run:
+
+    for f in synthea/*.json; do
+        cargo run -- validate "$f" --base-url https://server.fire.ly
+    done
+
 If you run into profile resolution errors, try alternative validation endpoints (options, not requirements):
 
 - Firely server (default): `https://server.fire.ly`
 - HAPI public R4 server: `https://hapi.fhir.org/baseR4`
 - A local validator setup (for example, a HAPI instance or another validator that has US Core packages installed)
+
+Tips for large bundles:
+
+- Pipe output to a pager: `for f in synthea/*.json; do clinlogix validate "$f"; done | less -R`
+- Jump to summaries with ripgrep: `for f in synthea/*.json; do clinlogix validate "$f"; done | rg -n "Themes:|Top Issue Groups|Validate:"`
 
 Docker Deployment and Execution
 
@@ -104,6 +130,7 @@ Project Structure
 Project Website
 
 https://princey9.github.io/clinlogix/
+Website source: docs/index.html
 
 Enable GitHub Pages and set the About link:
 

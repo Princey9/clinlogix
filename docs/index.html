@@ -4,172 +4,253 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ClinLogix — Health IT CLI Tool</title>
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 16px;
-      line-height: 1.55;
-    }
-    header { margin-bottom: 28px; }
-    code, pre {
-      background: #f4f4f4;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    pre {
-      padding: 12px;
-      overflow: auto;
-    }
-    .card {
-      border: 1px solid #e6e6e6;
-      border-radius: 14px;
-      padding: 16px;
-      margin: 16px 0;
-    }
-    .btn {
-      display: inline-block;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid #111;
-      text-decoration: none;
-      color: #111;
-      margin-right: 8px;
-    }
-    .muted { color: #555; }
-  </style>
+  <meta name="description" content="ClinLogix validates FHIR JSON resources and scans health IT logs with clear, actionable reports." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
 </head>
 
-<body>
-<header>
-  <h1>ClinLogix</h1>
+<body id="top">
+<a class="skip-link" href="#main">Skip to content</a>
 
-  <p>
-    <strong>ClinLogix</strong> is a Rust-based command-line tool for
-    <strong>health IT engineers and informatics students</strong>.
-    It supports both:
-  </p>
+<header class="site-header">
+  <nav class="nav" aria-label="Primary">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">CL</div>
+      <span class="brand-name">ClinLogix</span>
+    </div>
+    <div class="nav-links">
+      <a href="#what">What it does</a>
+      <a href="#quickstart">Quickstart</a>
+      <a href="#examples">Example outputs</a>
+      <a href="#synthea">Synthea</a>
+      <a href="#pages">GitHub Pages</a>
+      <a href="#top">Back to top</a>
+    </div>
+  </nav>
 
-  <ul>
-    <li>📄 Scanning clinical/system logs for errors and warnings</li>
-    <li>🧪 Validating real <strong>FHIR JSON</strong> resources using a validation service</li>
-  </ul>
-
-  <p class="muted">
-    Typical use cases include EHR services, HL7/FHIR interfaces,
-    audit logs, and clinical data pipelines.
-  </p>
-
-  <p>
-    <a class="btn" href="https://github.com/Princey9/clinlogix">GitHub Repository</a>
-    <a class="btn" href="https://github.com/Princey9/clinlogix/releases/latest">Download</a>
-  </p>
+  <div class="container">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Health IT CLI</p>
+        <h1>ClinLogix</h1>
+        <p>
+          Validate FHIR JSON resources and scan clinical logs with clear, actionable reports for
+          engineers, informatics students, and health IT teams.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/Princey9/clinlogix">View on GitHub</a>
+          <a class="btn ghost" href="#quickstart">Quickstart</a>
+        </div>
+        <p class="badge">Default validator: https://server.fire.ly</p>
+      </div>
+      <div class="hero-card" aria-label="ClinLogix highlights">
+        <ul>
+          <li>
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"></path>
+                <path d="M14 4v5h5"></path>
+                <path d="M7 15l2 2 4-4"></path>
+              </svg>
+            </div>
+            <div>
+              <span>FHIR validation</span>
+              <div>OperationOutcome parsing, grouped issue categories, and exact line hints.</div>
+            </div>
+          </li>
+          <li>
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M4 5h10"></path>
+                <path d="M4 9h16"></path>
+                <path d="M4 13h10"></path>
+                <path d="M4 17h16"></path>
+              </svg>
+            </div>
+            <div>
+              <span>Log scanning</span>
+              <div>Summaries, error-only mode, and JSON output for automation.</div>
+            </div>
+          </li>
+          <li>
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M6 7h12"></path>
+                <path d="M6 12h12"></path>
+                <path d="M6 17h12"></path>
+                <path d="M4 7a1 1 0 0 1 1-1h1"></path>
+              </svg>
+            </div>
+            <div>
+              <span>Bundle-ready</span>
+              <div>Theme detection for profile resolution gaps in large Synthea bundles.</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
 </header>
 
-<div class="card">
-  <h2>Problem</h2>
-  <p>
-    Healthcare IT systems generate large volumes of logs and structured data.
-    Manually inspecting these files is time-consuming and error-prone,
-    often delaying troubleshooting and data quality checks.
-  </p>
-</div>
+<main id="main" class="container">
+  <section id="what" class="section-card">
+    <h2>What it does</h2>
+    <div class="section-grid">
+      <div class="feature">
+        <h3>Validate FHIR JSON</h3>
+        <p>
+          Calls a remote FHIR <span class="inline-code">$validate</span> endpoint, parses
+          OperationOutcome results, and prints a structured report with severity, category, and
+          best-effort line numbers.
+        </p>
+      </div>
+      <div class="feature">
+        <h3>Scan Health IT logs</h3>
+        <p>
+          Summarizes error and warning counts, supports error-only printing, and includes JSON
+          output mode for scripting.
+        </p>
+      </div>
+      <div class="feature">
+        <h3>Readable at scale</h3>
+        <p>
+          Issues are grouped by severity, code, and message, with theme summaries to keep large
+          bundles manageable.
+        </p>
+      </div>
+    </div>
+  </section>
 
-<div class="card">
-  <h2>Solution</h2>
-  <p>
-    ClinLogix provides a lightweight CLI that:
-  </p>
-  <ul>
-    <li>Summarizes errors and warnings in log files</li>
-    <li>Validates FHIR JSON resources and reports conformance issues</li>
-    <li>Groups validation findings by category, theme, and severity with JSON path expressions</li>
-    <li>Adds best-effort line numbers to help you locate issues in large bundles</li>
-    <li>Supports JSON output and containerized execution via Docker</li>
-  </ul>
-</div>
+  <section id="quickstart" class="section-card">
+    <h2>Quickstart</h2>
+    <div class="section-grid">
+      <div>
+        <h3>Validate FHIR resources</h3>
+        <pre><code>cargo run -- validate examples/patient.json --base-url https://server.fire.ly
+cargo run -- validate examples/patient-bad.json --base-url https://server.fire.ly</code></pre>
+      </div>
+      <div>
+        <h3>Scan health IT logs</h3>
+        <pre><code>cargo run -- scan demo-healthit.log
+cargo run -- scan demo-healthit.log --errors-only
+cargo run -- scan demo-healthit.log --json</code></pre>
+      </div>
+    </div>
+    <p class="callout">
+      Prefer the binary? Download the latest release on GitHub or build from source with
+      <span class="inline-code">cargo build --release</span>.
+    </p>
+  </section>
 
-<div class="card">
-  <h2>Demo Commands</h2>
+  <section id="examples" class="section-card">
+    <h2>Example outputs</h2>
+    <div class="code-grid">
+      <div>
+        <h3>PASS (examples/patient.json)</h3>
+        <pre><code>FHIR Validation
+--------------
+File: examples/patient.json
+Base: https://server.fire.ly
+Validate: https://server.fire.ly/Patient/$validate
+HTTP: 200 OK
+Issues: 1 (errors: 0, warnings: 0, info: 1)
+Total: 1 issues in 1 categories
+Result: PASS ✅
+Themes:
+  1. General (x1)
 
-  <p><strong>Scan logs:</strong></p>
-  <pre><code>clinlogix scan demo-healthit.log
-clinlogix scan demo-healthit.log --errors-only
-clinlogix scan demo-healthit.log --json</code></pre>
+Top Issue Groups:
+- information | informational | The operation was successful (x1)
 
-  <p><strong>Validate FHIR resources:</strong></p>
-  <pre><code>clinlogix validate examples/patient.json
-clinlogix validate examples/patient-bad.json</code></pre>
+Issue Categories (severity/code/message):
+- information | informational | The operation was successful (1): information: 1
+  1. [information] The operation was successful</code></pre>
+      </div>
+      <div>
+        <h3>FAIL (examples/patient-bad.json)</h3>
+        <pre><code>FHIR Validation
+--------------
+File: examples/patient-bad.json
+Base: https://server.fire.ly
+Validate: https://server.fire.ly/Patient/$validate
+HTTP: 200 OK
+Issues: 1 (errors: 1, warnings: 0, info: 0)
+Total: 1 issues in 1 categories
+Result: FAIL ❌
+Themes:
+  1. General (x1)
 
-  <p class="muted">
-    (Screenshots of these commands are included in the project repository.)
-  </p>
-</div>
+Top Issue Groups:
+- error | code-invalid | Code 'invalid-gender-value' does not exist in the value set 'AdministrativeGender' (http://hl7.org/fhir/ValueSet/administrative-gender), but the binding is of strength 'required' (x1)
 
-<div class="card">
-  <h2>Validating Synthea Bundles</h2>
-  <p>
-    Synthea bundles often depend on US Core and other implementation guide profiles.
-    If the validation server does not have those packages installed, you will see errors
-    like “Unable to resolve reference to profile ...”. ClinLogix now groups those under
-    a profile resolution theme while preserving category grouping by severity/code/message,
-    JSON path expressions, and best-effort line numbers to help you triage results.
-  </p>
-  <p>
-    If you encounter profile resolution errors, you can try a different validator:
-  </p>
-  <ul>
-    <li>Firely server (default): <code>https://server.fire.ly</code></li>
-    <li>HAPI public R4 server: <code>https://hapi.fhir.org/baseR4</code></li>
-    <li>A local validator instance with the required packages installed</li>
-  </ul>
-</div>
+Issue Categories (severity/code/message):
+- error | code-invalid | Code 'invalid-gender-value' does not exist in the value set 'AdministrativeGender' (http://hl7.org/fhir/ValueSet/administrative-gender), but the binding is of strength 'required' (1): error: 1
+  1. [error] Code 'invalid-gender-value' does not exist in the value set 'AdministrativeGender' (http://hl7.org/fhir/ValueSet/administrative-gender), but the binding is of strength 'required'
+     expression: Patient.gender[0]
 
-<div class="card">
-  <h2>Run with Docker</h2>
+Error: "FHIR validation failed"</code></pre>
+      </div>
+    </div>
+  </section>
 
-  <p>ClinLogix can be run without installing Rust by using Docker.</p>
+  <section id="synthea" class="section-card">
+    <h2>Synthea testing guidance</h2>
+    <p>
+      Synthea bundles often rely on US Core and other implementation guide profiles. If the
+      validation server does not have those packages installed, you will see errors like
+      "Unable to resolve reference to profile ...". ClinLogix groups these under the theme
+      <span class="inline-code">Profile resolution (missing profiles on server)</span> while
+      preserving category grouping and JSON path expressions.
+    </p>
+    <div class="section-grid">
+      <div>
+        <h3>Generate Synthea data (optional)</h3>
+        <pre><code>./run_synthea -p 1</code></pre>
+        <p>
+          Install Synthea from
+          <span class="inline-code">https://github.com/synthetichealth/synthea</span> and copy a
+          bundle JSON into <span class="inline-code">synthea/</span>.
+        </p>
+      </div>
+      <div>
+        <h3>Validate bundles</h3>
+        <pre><code>for f in synthea/*.json; do
+    cargo run -- validate "$f" --base-url https://server.fire.ly
+done</code></pre>
+      </div>
+    </div>
+    <h3>Pipefail verification</h3>
+    <pre><code>set -o pipefail; for f in synthea/*.json; do
+    cargo run -- validate "$f" --base-url https://server.fire.ly
+done | rg -n "Themes:|Profile resolution|Validate:"; echo $?</code></pre>
+    <p>
+      Alternative validators: <span class="inline-code">https://server.fire.ly</span>,
+      <span class="inline-code">https://hapi.fhir.org/baseR4</span>, or a local validator with US
+      Core packages installed.
+    </p>
+  </section>
 
-  <pre><code>docker build -t clinlogix:latest .
+  <section id="pages" class="section-card">
+    <h2>How to enable GitHub Pages</h2>
+    <ol>
+      <li>GitHub repo → Settings → Pages.</li>
+      <li>Source: Deploy from a branch.</li>
+      <li>Branch: main (or default) + folder: /docs.</li>
+      <li>Save and copy the generated URL.</li>
+      <li>Repo main page → About → Website → paste the Pages URL.</li>
+    </ol>
+    <p>
+      Project website: <span class="inline-code">https://princey9.github.io/clinlogix/</span>.
+      README: <a href="https://github.com/Princey9/clinlogix#readme">https://github.com/Princey9/clinlogix#readme</a>.
+    </p>
+  </section>
+</main>
 
-docker run --rm -v "$PWD:/data" clinlogix:latest validate /data/examples/patient.json
-docker run --rm -v "$PWD:/data" clinlogix:latest validate /data/examples/patient-bad.json
-docker run --rm -v "$PWD:/data" clinlogix:latest scan /data/demo-healthit.log --json</code></pre>
-</div>
-
-<div class="card">
-  <h2>Download</h2>
-
-  <p>
-    <strong>Option A:</strong> Build from source
-  </p>
-  <pre><code>cargo build --release
-./target/release/clinlogix --help</code></pre>
-
-  <p>
-    <strong>Option B:</strong> Download the pre-built binary from GitHub Releases.
-  </p>
-
-  <p class="muted">
-    <strong>macOS note:</strong><br/>
-    This is an unsigned command-line tool. macOS may block it on first run.
-    Remove quarantine and run from Terminal:
-  </p>
-
-  <pre><code>chmod +x clinlogix-macos
-xattr -d com.apple.quarantine clinlogix-macos</code></pre>
-</div>
-
-<div class="card">
-  <h2>Target Users</h2>
-  <ul>
-    <li>Health informatics students</li>
-    <li>Digital health developers</li>
-    <li>Hospital IT and clinical systems support teams</li>
-  </ul>
-</div>
-
+<footer class="container">
+  <p>ClinLogix is a Rust CLI for health IT log analysis and FHIR validation.</p>
+  <a class="back-top" href="#top">Back to top</a>
+</footer>
 </body>
 </html>
