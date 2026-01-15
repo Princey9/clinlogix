@@ -238,6 +238,10 @@ pub fn print_report(report: &ValidationReport) {
     println!("{}", format_report(report));
 }
 
+pub fn is_failure(report: &ValidationReport) -> bool {
+    report.error_count > 0 || !report.status.is_success()
+}
+
 fn sorted_theme_counts(counts: &BTreeMap<String, usize>) -> Vec<(String, usize)> {
     let mut entries: Vec<(String, usize)> = counts
         .iter()
@@ -645,5 +649,116 @@ mod tests {
         );
         let output = format_report(&report);
         assert!(output.contains("line: 6"));
+    }
+
+    #[test]
+    fn format_report_includes_validate_and_top_groups() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![
+                Issue {
+                    severity: Some("error".to_string()),
+                    code: Some("invalid".to_string()),
+                    diagnostics: Some("Missing id".to_string()),
+                    details: None,
+                    location: vec!["Patient.id".to_string()],
+                    expression: vec![],
+                },
+                Issue {
+                    severity: Some("error".to_string()),
+                    code: Some("invalid".to_string()),
+                    diagnostics: Some("Missing id".to_string()),
+                    details: None,
+                    location: vec!["Patient.id".to_string()],
+                    expression: vec![],
+                },
+            ],
+        };
+
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "base/Patient/$validate",
+        );
+        let output = format_report(&report);
+        assert!(output.contains("Validate: base/Patient/$validate"));
+        assert!(output.contains("Top Issue Groups:"));
+        assert!(output.contains("Themes:"));
+    }
+
+    #[test]
+    fn format_report_includes_profile_resolution_hint() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![Issue {
+                severity: Some("error".to_string()),
+                code: Some("invalid".to_string()),
+                diagnostics: Some(
+                    "Unable to resolve reference to profile 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-bmi'. (line: 6)"
+                        .to_string(),
+                ),
+                details: None,
+                location: vec![],
+                expression: vec![],
+            }],
+        };
+
+        let report = build_report(
+            &outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "base/Patient/$validate",
+        );
+        let output = format_report(&report);
+        assert!(output.contains(PROFILE_RESOLUTION_THEME));
+        assert!(output.contains(PROFILE_RESOLUTION_HINT));
+    }
+
+    #[test]
+    fn failure_logic_fires_on_errors_or_http_failure() {
+        let outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![Issue {
+                severity: Some("error".to_string()),
+                code: Some("invalid".to_string()),
+                diagnostics: Some("Missing id".to_string()),
+                details: None,
+                location: vec![],
+                expression: vec![],
+            }],
+        };
+        let error_report = build_report(
+            &outcome,
+            StatusCode::OK,
+            "test.json",
+            "base",
+            "base/Patient/$validate",
+        );
+        assert!(is_failure(&error_report));
+
+        let ok_outcome = OperationOutcome {
+            resource_type: Some("OperationOutcome".to_string()),
+            issue: vec![],
+        };
+        let http_fail_report = build_report(
+            &ok_outcome,
+            StatusCode::BAD_REQUEST,
+            "test.json",
+            "base",
+            "base/Patient/$validate",
+        );
+        assert!(is_failure(&http_fail_report));
+
+        let ok_report = build_report(
+            &ok_outcome,
+            StatusCode::OK,
+            "test.json",
+            "base",
+            "base/Patient/$validate",
+        );
+        assert!(!is_failure(&ok_report));
     }
 }
